@@ -21,8 +21,8 @@ class PrinterBluetooth {
   final BluetoothDevice device;
 
   String get name => device.name;
-  // String get address => _device.address;
-  // int get type => _device.type;
+  String get address => device.address;
+  BluetoothDeviceType get type => device.type;
 }
 
 /// Printer Bluetooth Manager
