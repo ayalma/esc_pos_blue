@@ -85,7 +85,7 @@ class BluetoothPrinterManager {
     const int timeout = 5;
     if (_connection == null) {
       return Future<PosPrintResult>.value(PosPrintResult.printerNotSelected);
-    } else if (_connection.isConnected) {
+    } else if (!_connection.isConnected) {
       return Future<PosPrintResult>.value(PosPrintResult.printInProgress);
     }
 
