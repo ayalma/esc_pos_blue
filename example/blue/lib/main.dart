@@ -36,14 +36,14 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  PrinterBluetoothManager printerManager = PrinterBluetoothManager();
+  BluetoothDiscoveryManager discoveryManager = BluetoothDiscoveryManager();
   List<PrinterBluetooth> _devices = [];
 
   @override
   void initState() {
     super.initState();
 
-    printerManager.scanResults.listen((devices) async {
+    discoveryManager.scanResults.listen((devices) async {
       // print('UI: Devices found ${devices.length}');
       setState(() {
         _devices = devices;
@@ -55,11 +55,11 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _devices = [];
     });
-    printerManager.startScan(Duration(seconds: 10));
+    discoveryManager.startScan(Duration(seconds: 10));
   }
 
   void _stopScanDevices() {
-    printerManager.stopScan();
+    discoveryManager.stopScan();
   }
 
   Future<Ticket> demoReceipt(PaperSize paper) async {
@@ -278,7 +278,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _testPrint(PrinterBluetooth printer) async {
-    printerManager.selectPrinter(printer);
+    //printerManager.selectPrinter(printer);
 
     // TODO Don't forget to choose printer's paper
     const PaperSize paper = PaperSize.mm80;
@@ -288,10 +288,10 @@ class _MyHomePageState extends State<MyHomePage> {
     // await printerManager.printTicket(await testTicket(paper));
 
     // DEMO RECEIPT
-    final PosPrintResult res =
-        await printerManager.printTicket(await demoReceipt(paper));
+    // final PosPrintResult res =
+    //     await printerManager.printTicket(await demoReceipt(paper));
 
-    showToast(res.msg);
+    //showToast(res.msg);
   }
 
   @override
@@ -337,24 +337,24 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             );
           }),
-      floatingActionButton: StreamBuilder<bool>(
-        stream: printerManager.isScanningStream,
-        initialData: false,
-        builder: (c, snapshot) {
-          if (snapshot.data) {
-            return FloatingActionButton(
-              child: Icon(Icons.stop),
-              onPressed: _stopScanDevices,
-              backgroundColor: Colors.red,
-            );
-          } else {
-            return FloatingActionButton(
-              child: Icon(Icons.search),
-              onPressed: _startScanDevices,
-            );
-          }
-        },
-      ),
+      // floatingActionButton: StreamBuilder<bool>(
+      //   stream: printerManager.isScanningStream,
+      //   initialData: false,
+      //   builder: (c, snapshot) {
+      //     if (snapshot.data) {
+      //       return FloatingActionButton(
+      //         child: Icon(Icons.stop),
+      //         onPressed: _stopScanDevices,
+      //         backgroundColor: Colors.red,
+      //       );
+      //     } else {
+      //       return FloatingActionButton(
+      //         child: Icon(Icons.search),
+      //         onPressed: _startScanDevices,
+      //       );
+      //     }
+      //   },
+      // ),
     );
   }
 }

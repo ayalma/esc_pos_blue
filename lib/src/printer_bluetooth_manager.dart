@@ -1,15 +1,8 @@
-/*
- * esc_pos_blue
- * 
- * Copyright (c) 2019-2020. All rights reserved.
- * See LICENSE for distribution and usage details.
- */
-
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -26,28 +19,20 @@ class PrinterBluetooth {
 }
 
 /// Printer Bluetooth Manager
-class PrinterBluetoothManager {
+class BluetoothDiscoveryManager {
   final BehaviorSubject<bool> _isScanning = BehaviorSubject.seeded(false);
-  PrinterBluetooth _selectedPrinter;
   StreamSubscription _isScanningSubscription;
   StreamSubscription _scanResultsSubscription;
 
-  PrinterBluetoothManager() {}
+  BluetoothDiscoveryManager() {}
   final FlutterBluetoothSerial _bluetoothManager =
       FlutterBluetoothSerial.instance;
-
-  bool _isPrinting = false;
-  bool _isConnected = false;
 
   Stream<bool> get isScanningStream => _isScanning.stream;
 
   final BehaviorSubject<List<PrinterBluetooth>> _scanResults =
       BehaviorSubject.seeded([]);
   Stream<List<PrinterBluetooth>> get scanResults => _scanResults.stream;
-
-  Future _runDelayed(int seconds) {
-    return Future<dynamic>.delayed(Duration(seconds: seconds));
-  }
 
   void startScan(Duration timeout) async {
     _scanResults.add(<PrinterBluetooth>[]);
@@ -64,8 +49,30 @@ class PrinterBluetoothManager {
     await _bluetoothManager.startDiscovery();
   }
 
-  void selectPrinter(PrinterBluetooth printer) {
-    _selectedPrinter = printer;
+  Future<void> dispose() async {
+    await _isScanning.drain();
+    _isScanning.close();
+    await _isScanningSubscription.cancel();
+    await _scanResultsSubscription.cancel();
+  }
+}
+
+class BluetoothPrinterManager {
+  String address;
+  BluetoothConnection _connection;
+  bool _isPrinting = false;
+  BluetoothPrinterManager({
+    @required this.address,
+  }) : assert(address != null);
+
+  Future<void> connect() async {
+    _connection = await BluetoothConnection.toAddress(address);
+  }
+
+  Future<void> disConnect() => _connection?.finish();
+
+  Future _runDelayed(int seconds) {
+    return Future<dynamic>.delayed(Duration(seconds: seconds));
   }
 
   Future<PosPrintResult> writeBytes(
@@ -76,29 +83,18 @@ class PrinterBluetoothManager {
     final Completer<PosPrintResult> completer = Completer();
 
     const int timeout = 5;
-    if (_selectedPrinter == null) {
+    if (_connection == null) {
       return Future<PosPrintResult>.value(PosPrintResult.printerNotSelected);
-    } else if (_isScanning.value) {
-      return Future<PosPrintResult>.value(PosPrintResult.scanInProgress);
-    } else if (_isPrinting) {
+    } else if (_connection.isConnected) {
       return Future<PosPrintResult>.value(PosPrintResult.printInProgress);
     }
 
     _isPrinting = true;
 
-    // Connect
-    final connection =
-        await BluetoothConnection.toAddress(_selectedPrinter.device.address);
-
     final len = bytes.length;
-    List<List<int>> chunks = [];
     for (var i = 0; i < len; i += chunkSizeBytes) {
       var end = (i + chunkSizeBytes < len) ? i + chunkSizeBytes : len;
-      chunks.add(bytes.sublist(i, end));
-    }
-
-    for (var i = 0; i < chunks.length; i += 1) {
-      connection.output.add(Uint8List.fromList(chunks[i]));
+      _connection.output.add(Uint8List.fromList(bytes.sublist(i, end)));
       sleep(Duration(milliseconds: queueSleepTimeMs));
     }
 
