@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -24,7 +23,7 @@ class BluetoothDiscoveryManager {
   StreamSubscription _isScanningSubscription;
   StreamSubscription _scanResultsSubscription;
 
-  BluetoothDiscoveryManager() {}
+  BluetoothDiscoveryManager();
   final FlutterBluetoothSerial _bluetoothManager =
       FlutterBluetoothSerial.instance;
 
@@ -46,7 +45,7 @@ class BluetoothDiscoveryManager {
   }
 
   void stopScan() async {
-    await _bluetoothManager.startDiscovery();
+    await _bluetoothManager.cancelDiscovery();
   }
 
   Future<void> dispose() async {
@@ -58,15 +57,24 @@ class BluetoothDiscoveryManager {
 }
 
 class BluetoothPrinterManager {
-  String address;
+  String _address;
   BluetoothConnection _connection;
   bool _isPrinting = false;
-  BluetoothPrinterManager({
-    @required this.address,
-  }) : assert(address != null);
+  BluetoothPrinterManager();
+
+  /// Select a network printer
+  ///
+  /// [timeout] is used to specify the maximum allowed time to wait
+  /// for a connection to be established.
+  void selectPrinter(String address) {
+    _address = address;
+  }
 
   Future<void> connect() async {
-    _connection = await BluetoothConnection.toAddress(address);
+    if (_connection != null && _connection.isConnected) {
+      await _connection.finish();
+    }
+    _connection = await BluetoothConnection.toAddress(_address);
   }
 
   Future<void> disConnect() => _connection?.finish();
