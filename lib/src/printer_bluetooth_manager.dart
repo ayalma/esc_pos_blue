@@ -70,7 +70,7 @@ class BluetoothPrinterManager {
     _address = address;
   }
 
-  bool isConnected() => _connection?.isConnected;
+  bool isConnected() => _connection?.isConnected ?? false;
 
   Future<void> connect() async {
     if (_connection != null && _connection.isConnected) {
@@ -109,7 +109,7 @@ class BluetoothPrinterManager {
         sleep(Duration(milliseconds: queueSleepTimeMs));
       }
     } else {
-       _connection.output.add(Uint8List.fromList(bytes));
+      _connection.output.add(Uint8List.fromList(bytes));
     }
     completer.complete(PosPrintResult.success);
 
