@@ -38,6 +38,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   BluetoothDiscoveryManager discoveryManager = BluetoothDiscoveryManager();
   List<PrinterBluetooth> _devices = [];
+  BluetoothPrinterManager printerManager = BluetoothPrinterManager();
 
   @override
   void initState() {
@@ -69,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final ByteData data = await rootBundle.load('assets/rabbit_black.jpg');
     final Uint8List bytes = data.buffer.asUint8List();
     final Image image = decodeImage(bytes);
-     ticket.image(image);
+    ticket.image(image);
 
     ticket.text('GROCERYLY',
         styles: PosStyles(
@@ -202,67 +203,25 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Print QR Code using native function
     // ticket.qrcode('example.com');
-
-    ticket.feed(2);
     ticket.cut();
     return ticket;
   }
-
+  GlobalKey test = GlobalKey();
   Future<Ticket> testTicket(PaperSize paper) async {
     final Ticket ticket = Ticket(paper);
-
-    ticket.text(
-        'Regular: aA bB cC dD eE fF gG hH iI jJ kK lL mM nN oO pP qQ rR sS tT uU vV wW xX yY zZ');
-    ticket.text('Special 1: àÀ èÈ éÉ ûÛ üÜ çÇ ôÔ',
-        styles: PosStyles(codeTable: PosCodeTable.westEur));
-    ticket.text('Special 2: blåbærgrød',
-        styles: PosStyles(codeTable: PosCodeTable.westEur));
-
-    ticket.text('Bold text', styles: PosStyles(bold: true));
-    ticket.text('Reverse text', styles: PosStyles(reverse: true));
-    ticket.text('Underlined text',
-        styles: PosStyles(underline: true), linesAfter: 1);
-    ticket.text('Align left', styles: PosStyles(align: PosAlign.left));
-    ticket.text('Align center', styles: PosStyles(align: PosAlign.center));
-    ticket.text('Align right',
-        styles: PosStyles(align: PosAlign.right), linesAfter: 1);
-
-    ticket.row([
-      PosColumn(
-        text: 'col3',
-        width: 3,
-        styles: PosStyles(align: PosAlign.center, underline: true),
-      ),
-      PosColumn(
-        text: 'col6',
-        width: 6,
-        styles: PosStyles(align: PosAlign.center, underline: true),
-      ),
-      PosColumn(
-        text: 'col3',
-        width: 3,
-        styles: PosStyles(align: PosAlign.center, underline: true),
-      ),
-    ]);
-
-    ticket.text('Text size 200%',
-        styles: PosStyles(
-          height: PosTextSize.size2,
-          width: PosTextSize.size2,
-        ));
 
     // Print image
     final ByteData data = await rootBundle.load('assets/logo.png');
     final Uint8List bytes = data.buffer.asUint8List();
     final Image image = decodeImage(bytes);
-    ticket.image(image);
+    //ticket.image(image);
     // Print image using alternative commands
-     ticket.imageRaster(image);
-     ticket.imageRaster(image, imageFn: PosImageFn.graphics);
+    ticket.imageRaster(image);
+    //ticket.imageRaster(image, imageFn: PosImageFn.graphics);
 
     // Print barcode
     final List<int> barData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 4];
-    ticket.barcode(Barcode.upcA(barData));
+   // ticket.barcode(Barcode.upcA(barData));
 
     // Print mixed (chinese + latin) text. Only for printers supporting Kanji mode
     // ticket.text(
@@ -270,22 +229,22 @@ class _MyHomePageState extends State<MyHomePage> {
     //   styles: PosStyles(codeTable: PosCodeTable.westEur),
     //   containsChinese: true,
     // );
-
-    ticket.feed(2);
-
     ticket.cut();
     return ticket;
   }
 
   void _testPrint(PrinterBluetooth printer) async {
+    const PaperSize paper = PaperSize.mm80;
+    printerManager.selectPrinter(printer.address);
+    if (!printerManager.isConnected()) await printerManager.connect();
+   // printerManager.printTicket(await demoReceipt(paper));
     //printerManager.selectPrinter(printer);
 
-    // TODO Don't forget to choose printer's paper
-    const PaperSize paper = PaperSize.mm80;
+   // TODO Don't forget to choose printer's paper
 
-    // TEST PRINT
-    // final PosPrintResult res =
-    // await printerManager.printTicket(await testTicket(paper));
+    //TEST PRINT
+    final PosPrintResult res =
+    await printerManager.printTicket(await testTicket(paper));
 
     // DEMO RECEIPT
     // final PosPrintResult res =
@@ -296,12 +255,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+     return Scaffold(
+      
       appBar: AppBar(
         title: Text(widget.title),
       ),
       body: ListView.builder(
+          key: test,
           itemCount: _devices.length,
+          shrinkWrap: true,
           itemBuilder: (BuildContext context, int index) {
             return InkWell(
               onTap: () => _testPrint(_devices[index]),
@@ -337,24 +299,24 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             );
           }),
-      // floatingActionButton: StreamBuilder<bool>(
-      //   stream: printerManager.isScanningStream,
-      //   initialData: false,
-      //   builder: (c, snapshot) {
-      //     if (snapshot.data) {
-      //       return FloatingActionButton(
-      //         child: Icon(Icons.stop),
-      //         onPressed: _stopScanDevices,
-      //         backgroundColor: Colors.red,
-      //       );
-      //     } else {
-      //       return FloatingActionButton(
-      //         child: Icon(Icons.search),
-      //         onPressed: _startScanDevices,
-      //       );
-      //     }
-      //   },
-      // ),
+      floatingActionButton: StreamBuilder<bool>(
+        stream: discoveryManager.isScanningStream,
+        initialData: false,
+        builder: (c, snapshot) {
+          if (snapshot.data) {
+            return FloatingActionButton(
+              child: Icon(Icons.stop),
+              onPressed: _stopScanDevices,
+              backgroundColor: Colors.red,
+            );
+          } else {
+            return FloatingActionButton(
+              child: Icon(Icons.search),
+              onPressed: _startScanDevices,
+            );
+          }
+        },
+      ),
     );
   }
 }
