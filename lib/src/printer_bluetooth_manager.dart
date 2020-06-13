@@ -70,8 +70,8 @@ class BluetoothPrinterManager {
     _address = address;
   }
 
-  bool isConnected()=> _connection?.isConnected;
-  
+  bool isConnected() => _connection?.isConnected;
+
   Future<void> connect() async {
     if (_connection != null && _connection.isConnected) {
       await _connection.finish();
@@ -89,6 +89,7 @@ class BluetoothPrinterManager {
     List<int> bytes, {
     int chunkSizeBytes = 20,
     int queueSleepTimeMs = 20,
+    bool isChunked = true,
   }) async {
     final Completer<PosPrintResult> completer = Completer();
 
@@ -100,14 +101,16 @@ class BluetoothPrinterManager {
     }
 
     _isPrinting = true;
-
-    final len = bytes.length;
-    for (var i = 0; i < len; i += chunkSizeBytes) {
-      var end = (i + chunkSizeBytes < len) ? i + chunkSizeBytes : len;
-      _connection.output.add(Uint8List.fromList(bytes.sublist(i, end)));
-      sleep(Duration(milliseconds: queueSleepTimeMs));
+    if (isChunked) {
+      final len = bytes.length;
+      for (var i = 0; i < len; i += chunkSizeBytes) {
+        var end = (i + chunkSizeBytes < len) ? i + chunkSizeBytes : len;
+        _connection.output.add(Uint8List.fromList(bytes.sublist(i, end)));
+        sleep(Duration(milliseconds: queueSleepTimeMs));
+      }
+    } else {
+      _connection.output.add(Uint8List.fromList(bytes));
     }
-
     completer.complete(PosPrintResult.success);
 
     //  await _bluetoothManager.connect(_selectedPrinter._device);
@@ -202,14 +205,17 @@ class BluetoothPrinterManager {
     Ticket ticket, {
     int chunkSizeBytes = 20,
     int queueSleepTimeMs = 20,
+    bool isChunked = false,
   }) async {
     if (ticket == null || ticket.bytes.isEmpty) {
       return Future<PosPrintResult>.value(PosPrintResult.ticketEmpty);
     }
+
     return writeBytes(
       ticket.bytes,
       chunkSizeBytes: chunkSizeBytes,
       queueSleepTimeMs: queueSleepTimeMs,
+      isChunked: isChunked,
     );
   }
 }
