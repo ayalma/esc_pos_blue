@@ -70,6 +70,8 @@ class BluetoothPrinterManager {
     _address = address;
   }
 
+  bool isConnected()=> _connection?.isConnected;
+  
   Future<void> connect() async {
     if (_connection != null && _connection.isConnected) {
       await _connection.finish();
