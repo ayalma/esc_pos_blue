@@ -109,7 +109,7 @@ class BluetoothPrinterManager {
         sleep(Duration(milliseconds: queueSleepTimeMs));
       }
     } else {
-      _connection.output.add(Uint8List.fromList(bytes));
+       _connection.output.add(Uint8List.fromList(bytes));
     }
     completer.complete(PosPrintResult.success);
 
