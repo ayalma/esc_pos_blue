@@ -66,8 +66,10 @@ class BluetoothPrinterManager {
   ///
   /// [timeout] is used to specify the maximum allowed time to wait
   /// for a connection to be established.
-  void selectPrinter(String address) {
+  void selectPrinter(String address) async{
     _address = address;
+      await _connection?.finish();
+    _connection = null;
   }
 
   bool isConnected() => _connection?.isConnected ?? false;
